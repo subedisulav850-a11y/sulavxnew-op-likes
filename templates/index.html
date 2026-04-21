@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Like Engine — Free Fire</title>
+<style>
+  :root {
+    --bg: #0b0d12;
+    --panel: #14171f;
+    --accent: #ff5e3a;
+    --accent2: #ffb142;
+    --text: #f5f6fa;
+    --muted: #8a90a3;
+    --ok: #2ecc71;
+    --err: #ff4757;
+    --border: #222633;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: radial-gradient(ellipse at top, #1a1f2e 0%, var(--bg) 60%);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .wrap { width: 100%; max-width: 560px; }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  }
+  .brand {
+    display: flex; align-items: center; gap: 12px; margin-bottom: 8px;
+  }
+  .logo {
+    width: 44px; height: 44px; border-radius: 12px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display: grid; place-items: center; font-weight: 800; font-size: 22px;
+  }
+  h1 { margin: 0; font-size: 22px; letter-spacing: 0.3px; }
+  .sub { color: var(--muted); font-size: 13px; margin-top: 4px; }
+  form { display: grid; gap: 14px; margin-top: 24px; }
+  label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.6px; }
+  .field { display: grid; gap: 6px; }
+  input, select {
+    background: #0f1218;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 13px 14px;
+    color: var(--text);
+    font-size: 15px;
+    outline: none;
+    transition: border-color .15s;
+  }
+  input:focus, select:focus { border-color: var(--accent); }
+  button {
+    margin-top: 6px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #fff; border: 0; border-radius: 10px;
+    padding: 14px; font-size: 15px; font-weight: 700;
+    cursor: pointer; letter-spacing: 0.4px;
+    transition: transform .1s, opacity .15s;
+  }
+  button:hover { transform: translateY(-1px); }
+  button:disabled { opacity: 0.6; cursor: wait; }
+  .result {
+    margin-top: 20px;
+    background: #0f1218;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    display: none;
+  }
+  .result.show { display: block; }
+  .row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px dashed #1d2230; font-size: 14px; }
+  .row:last-child { border: 0; }
+  .row span:first-child { color: var(--muted); }
+  .row span:last-child { font-weight: 600; }
+  .added { color: var(--ok); }
+  .error { color: var(--err); }
+  .footer { text-align: center; margin-top: 18px; color: var(--muted); font-size: 12px; }
+  .spinner {
+    display: inline-block; width: 14px; height: 14px; border: 2px solid #fff3;
+    border-top-color: #fff; border-radius: 50%; animation: spin .8s linear infinite;
+    vertical-align: middle; margin-right: 8px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="brand">
+        <div class="logo">L</div>
+        <div>
+          <h1>Like Engine</h1>
+          <div class="sub">Free Fire profile like booster · OB53</div>
+        </div>
+      </div>
+
+      <form id="likeForm">
+        <div class="field">
+          <label for="uid">Player UID</label>
+          <input id="uid" name="uid" type="text" inputmode="numeric" pattern="[0-9]+" placeholder="e.g. 123456789" required />
+        </div>
+        <div class="field">
+          <label for="region">Region</label>
+          <select id="region" name="region">
+            <option value="BD">Bangladesh (BD)</option>
+            <option value="IND">India (IND)</option>
+            <option value="BR">Brazil (BR)</option>
+            <option value="US">USA (US)</option>
+            <option value="SAC">South America (SAC)</option>
+            <option value="NA">North America (NA)</option>
+          </select>
+        </div>
+        <button type="submit" id="btn">Send Likes</button>
+      </form>
+
+      <div class="result" id="result"></div>
+      <div class="footer">Powered by Like Engine · v2</div>
+    </div>
+  </div>
+
+<script>
+const form = document.getElementById('likeForm');
+const btn = document.getElementById('btn');
+const result = document.getElementById('result');
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const uid = document.getElementById('uid').value.trim();
+  const region = document.getElementById('region').value;
+  if (!uid) return;
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Processing…';
+  result.className = 'result show';
+  result.innerHTML = '<div class="row"><span>Status</span><span>Sending request…</span></div>';
+
+  try {
+    const res = await fetch(`/like?uid=${encodeURIComponent(uid)}&server_name=${encodeURIComponent(region)}`);
+    const data = await res.json();
+    if (data.error) {
+      result.innerHTML = `<div class="row"><span>Status</span><span class="error">${data.error}</span></div>`;
+    } else {
+      const added = data.LikesGivenByAPI || 0;
+      result.innerHTML = `
+        <div class="row"><span>Player</span><span>${data.PlayerNickname || '-'}</span></div>
+        <div class="row"><span>UID</span><span>${data.UID}</span></div>
+        <div class="row"><span>Likes Before</span><span>${data.LikesbeforeCommand}</span></div>
+        <div class="row"><span>Likes After</span><span>${data.LikesafterCommand}</span></div>
+        <div class="row"><span>Likes Added</span><span class="${added > 0 ? 'added' : 'error'}">${added > 0 ? '+' : ''}${added}</span></div>
+      `;
+    }
+  } catch (err) {
+    result.innerHTML = `<div class="row"><span>Status</span><span class="error">Network error: ${err.message}</span></div>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Send Likes';
+  }
+});
+</script>
+</body>
+</html>
